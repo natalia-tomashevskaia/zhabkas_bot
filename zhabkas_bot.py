@@ -7,10 +7,13 @@ from requests import JSONDecodeError
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 
-NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
 WEDNESDAY = 2
+NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
+BOT_ROOT_URI = os.getenv('ROOT_URI')
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID')
+PORT = int(os.getenv('PORT')) if os.getenv('PORT') else 5000
+PROFILE = os.getenv('PROFILE')
 
 
 def calc_days_to_wait_until_wednesday(current_day):
@@ -88,4 +91,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('start', start_command))
 
     print("Starting the zhabkas bot...")
-    application.run_polling()
+    if PROFILE == 'prod':
+        application.run_webhook(port=PORT, url_path=f'{BOT_ROOT_URI}/{TELEGRAM_BOT_TOKEN}')
+    else:
+        application.run_polling()
