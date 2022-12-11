@@ -9,7 +9,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 
 WEDNESDAY = 2
 NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
-BOT_ROOT_URI = os.getenv('ROOT_URI')
+BOT_ROOT_URI = os.getenv('ROOT_BOT_URI')
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID')
 PORT = int(os.getenv('PORT')) if os.getenv('PORT') else 5000
