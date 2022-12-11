@@ -92,7 +92,6 @@ if __name__ == '__main__':
 
     print("Starting the zhabkas bot...")
     if PROFILE == 'prod':
-        print(BOT_ROOT_URI)
         application.run_webhook(
             listen='0.0.0.0',
             port=PORT,
