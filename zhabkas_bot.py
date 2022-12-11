@@ -35,7 +35,7 @@ def calc_day_string(days_to_wait):
 
 
 async def get_zhabka_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    current_day_in_moscow = datetime.datetime.now(tz=ZoneInfo('Europe/Moscow')).today().weekday()
+    current_day_in_moscow = datetime.datetime.now(tz=ZoneInfo('Europe/Moscow')).weekday()
     if current_day_in_moscow == WEDNESDAY:
         await send_wednesday_message(update, context)
     else:
