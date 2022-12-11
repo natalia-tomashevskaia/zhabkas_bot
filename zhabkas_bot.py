@@ -92,6 +92,6 @@ if __name__ == '__main__':
 
     print("Starting the zhabkas bot...")
     if PROFILE == 'prod':
-        application.run_webhook(port=PORT, url_path=f'{BOT_ROOT_URI}/{TELEGRAM_BOT_TOKEN}')
+        application.run_webhook(port=PORT, webhook_url=f'{BOT_ROOT_URI}/{TELEGRAM_BOT_TOKEN}')
     else:
         application.run_polling()
