@@ -8,7 +8,6 @@ from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from requests import JSONDecodeError
-import warnings
 
 # Set up database connection
 conn = sqlite3.connect('users.db')
@@ -28,6 +27,7 @@ UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID')
 PORT = int(os.getenv('PORT')) if os.getenv('PORT') else 5000
 PROFILE = os.getenv('PROFILE')
 
+
 def calc_days_to_wait_until_wednesday(current_day):
     if current_day < WEDNESDAY:
         return WEDNESDAY - current_day
@@ -37,12 +37,14 @@ def calc_days_to_wait_until_wednesday(current_day):
     if current_day == WEDNESDAY:
         return 0
 
+
 def calc_day_string(days_to_wait):
     if days_to_wait != 1:
         day_string = 'days'
     else:
         day_string = 'day'
     return day_string
+
 
 async def get_zhabka_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id  # Retrieve the user ID from the chat
@@ -51,6 +53,7 @@ async def get_zhabka_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await send_wednesday_message(user_id)
     else:
         await send_non_wednesday_message(user_id, update, context, current_day_in_moscow)
+
 
 async def send_wednesday_message(user_id):
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -69,6 +72,7 @@ async def send_wednesday_message(user_id):
         await bot.send_message(chat_id=user_id,
                                text='Sorry, my dudes, no zhabka for now, try later')
 
+
 async def send_non_wednesday_message(user_id, update, context, current_day_in_moscow):
     days_to_wait = calc_days_to_wait_until_wednesday(current_day_in_moscow)
     day_string = calc_day_string(days_to_wait)
@@ -76,13 +80,17 @@ async def send_non_wednesday_message(user_id, update, context, current_day_in_mo
                                  photo=NOT_WEDNESDAY_PICTURE_PATH,
                                  caption=f'Have patience for {days_to_wait} more {day_string}, my pals')
 
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text="Send /zhabka and see if today is Wednesday, my dudes! Send /register and receive a zhabka every Wednesday")
+                                   text="Send /zhabka and see if today is Wednesday, my dudes! "
+                                        "Send /register and receive a zhabka every Wednesday")
+
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text="Welcome, my dudes!")
+
 
 async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id  # Retrieve the user ID from the chat
@@ -97,11 +105,13 @@ async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You're already registered!")
 
+
 async def send_wednesday_message_to_all_users():
     c.execute("SELECT id FROM users")
     user_ids = [row[0] for row in c.fetchall()]
     for user_id in user_ids:
         await send_wednesday_message(user_id)
+
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
