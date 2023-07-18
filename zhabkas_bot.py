@@ -1,10 +1,13 @@
 import os
 import datetime
+from requests import JSONDecodeError
 from zoneinfo import ZoneInfo
-from telegram import Update
+
+import requests
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from replit import db
-from apscheduler.schedulers.background import BackgroundScheduler
 
 WEDNESDAY = 2
 NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
