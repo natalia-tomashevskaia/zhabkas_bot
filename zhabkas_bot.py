@@ -3,7 +3,7 @@ import datetime
 from zoneinfo import ZoneInfo
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from replit import db  # import replit database
+from replit import db
 from apscheduler.schedulers.background import BackgroundScheduler
 
 WEDNESDAY = 2
