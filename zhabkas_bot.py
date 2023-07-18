@@ -1,23 +1,10 @@
-import sqlite3
-import datetime
 import os
+import datetime
 from zoneinfo import ZoneInfo
-
-import requests
-from telegram import Update, Bot
+from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from requests import JSONDecodeError
-
-# Set up database connection
-conn = sqlite3.connect('users.db')
-c = conn.cursor()
-
-# Create table if not exists
-c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY)")
-
-# Save (commit) the changes
-conn.commit()
+from replit import db  # import replit database
+from apscheduler.schedulers.background import BackgroundScheduler
 
 WEDNESDAY = 2
 NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
@@ -93,24 +80,18 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.chat.id  # Retrieve the user ID from the chat
-    c.execute("SELECT id FROM users WHERE id=?", (user_id,))
-    result = c.fetchone()
-    if result is None:
-        c.execute("INSERT INTO users VALUES (?)", (user_id,))
-        conn.commit()
+    user_id = str(update.message.chat.id)  # Retrieve the user ID from the chat
+    if user_id not in db.keys():  # Check if user_id is not in the database
+        db[user_id] = "registered"  # Add user_id to the database
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You're now registered to receive a frog message every Wednesday!")
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You're already registered!")
 
-
 async def send_wednesday_message_to_all_users():
-    c.execute("SELECT id FROM users")
-    user_ids = [row[0] for row in c.fetchall()]
-    for user_id in user_ids:
-        await send_wednesday_message(user_id)
+    for user_id in db.keys():
+        await send_wednesday_message(int(user_id))  # Convert user_id back to int before sending the message
 
 
 if __name__ == '__main__':
@@ -126,11 +107,4 @@ if __name__ == '__main__':
     scheduler.add_job(send_wednesday_message_to_all_users, 'cron', day_of_week='2', hour='12', minute='00')
     scheduler.start()
 
-    if PROFILE == 'prod':
-        application.run_webhook(
-            listen='0.0.0.0',
-            port=PORT,
-            webhook_url=BOT_ROOT_URI
-        )
-    else:
-        application.run_polling()
+    application.run_polling()
