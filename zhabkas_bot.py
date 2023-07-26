@@ -1,9 +1,10 @@
 import sqlite3
 import datetime
 import os
+import requests
 from zoneinfo import ZoneInfo
 from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from requests import JSONDecodeError
 
@@ -21,7 +22,7 @@ WEDNESDAY = 2
 NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID')
-
+WEDNESDAY_PHOTO = None
 def calc_days_to_wait_until_wednesday(current_day):
     if current_day < WEDNESDAY:
         return WEDNESDAY - current_day
@@ -46,22 +47,27 @@ async def get_zhabka_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     else:
         await send_non_wednesday_message(user_id, update, context, current_day_in_moscow)
 
+
 async def send_wednesday_message(user_id):
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
-    try:
-        data = requests.get('https://api.unsplash.com/photos/random',
-                            params={
-                                "query": "frog",
-                                "client_id": UNSPLASH_CLIENT_ID
-                            }).json()
+    global WEDNESDAY_PHOTO  # Use the global variable
+    if WEDNESDAY_PHOTO is None:
+        try:
+            data = requests.get('https://api.unsplash.com/photos/random',
+                                params={
+                                    "query": "frog",
+                                    "client_id": UNSPLASH_CLIENT_ID
+                                }).json()
 
-        photo = data['urls']['small']
-        await bot.send_photo(chat_id=user_id,
-                             photo=photo,
-                             caption='It is Wednesday (in UTC+3), my dudes✨')
-    except JSONDecodeError:
-        await bot.send_message(chat_id=user_id,
-                               text='Sorry, my dudes, no zhabka for now, try later')
+            WEDNESDAY_PHOTO = data['urls']['small']  # Update the Wednesday photo URL
+        except JSONDecodeError:
+            await bot.send_message(chat_id=user_id,
+                                   text='Sorry, my dudes, no zhabka for now, try later')
+            return
+
+    await bot.send_photo(chat_id=user_id,
+                         photo=WEDNESDAY_PHOTO,
+                         caption='It is Wednesday (in UTC+3), my dudes✨')
 
 async def send_non_wednesday_message(user_id, update, context, current_day_in_moscow):
     days_to_wait = calc_days_to_wait_until_wednesday(current_day_in_moscow)
@@ -90,12 +96,46 @@ async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You're already registered!")
+async def unregister_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.chat.id  # Retrieve the user ID from the chat
+    c.execute("SELECT id FROM users WHERE id=?", (user_id,))
+    result = c.fetchone()
+    if result is not None:
+        c.execute("DELETE FROM users WHERE id=?", (user_id,))
+        conn.commit()
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="You're now unregistered and won't receive a frog message every Wednesday!")
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="You're not registered yet!")
 
 async def send_wednesday_message_to_all_users():
+    global WEDNESDAY_PHOTO
+    WEDNESDAY_PHOTO = None  # Reset the Wednesday photo URL at the beginning of the day
     c.execute("SELECT id FROM users")
     user_ids = [row[0] for row in c.fetchall()]
     for user_id in user_ids:
         await send_wednesday_message(user_id)
+
+class AllMessagesFilter(object):
+    def filter(self, message):
+        return True
+
+class CustomHandler(MessageHandler):
+    def check_update(self, update):
+        return True  # Always handle the update
+
+async def handle_unknown_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check if the message is a command
+    if update.message and not update.message.text.startswith('/'):
+        frog_ascii = """
+   @..@
+ (-----)
+( >  < )
+^^    ^^
+        """
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=frog_ascii)
+
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
@@ -103,8 +143,10 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(CommandHandler('start', start_command))
     application.add_handler(CommandHandler('register', register_command))
+    application.add_handler(CommandHandler('unregister', unregister_command))  # Add the unregister command handler
+    application.add_handler(CustomHandler(AllMessagesFilter(), handle_unknown_commands))
 
-    scheduler = AsyncIOScheduler()
+    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
     scheduler.add_job(send_wednesday_message_to_all_users, 'cron', day_of_week='2', hour='12', minute='00')
     scheduler.start()
 
