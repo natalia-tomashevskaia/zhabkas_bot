@@ -18,11 +18,14 @@ c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY)")
 # Save (commit) the changes
 conn.commit()
 
+# Set up global variables
 WEDNESDAY = 2
 NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID')
 WEDNESDAY_PHOTO = None
+
+# Set up calculations
 def calc_days_to_wait_until_wednesday(current_day):
     if current_day < WEDNESDAY:
         return WEDNESDAY - current_day
@@ -50,7 +53,7 @@ async def get_zhabka_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def send_wednesday_message(user_id):
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
-    global WEDNESDAY_PHOTO  # Use the global variable
+    global WEDNESDAY_PHOTO
     if WEDNESDAY_PHOTO is None:
         try:
             data = requests.get('https://api.unsplash.com/photos/random',
@@ -59,7 +62,7 @@ async def send_wednesday_message(user_id):
                                     "client_id": UNSPLASH_CLIENT_ID
                                 }).json()
 
-            WEDNESDAY_PHOTO = data['urls']['small']  # Update the Wednesday photo URL
+            WEDNESDAY_PHOTO = data['urls']['small']
         except JSONDecodeError:
             await bot.send_message(chat_id=user_id,
                                    text='Sorry, my dudes, no zhabka for now, try later')
@@ -96,6 +99,7 @@ async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You're already registered!")
+
 async def unregister_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id  # Retrieve the user ID from the chat
     c.execute("SELECT id FROM users WHERE id=?", (user_id,))
@@ -117,6 +121,7 @@ async def send_wednesday_message_to_all_users():
     for user_id in user_ids:
         await send_wednesday_message(user_id)
 
+# Set up a custom filter and a custom handler to avoid package conflicts
 class AllMessagesFilter(object):
     def filter(self, message):
         return True
@@ -136,14 +141,14 @@ async def handle_unknown_commands(update: Update, context: ContextTypes.DEFAULT_
         """
         await context.bot.send_message(chat_id=update.effective_chat.id, text=frog_ascii)
 
-
+# Build the app and set up a cron expression
 if __name__ == '__main__':
     application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     application.add_handler(CommandHandler('zhabka', get_zhabka_command))
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(CommandHandler('start', start_command))
     application.add_handler(CommandHandler('register', register_command))
-    application.add_handler(CommandHandler('unregister', unregister_command))  # Add the unregister command handler
+    application.add_handler(CommandHandler('unregister', unregister_command))
     application.add_handler(CustomHandler(AllMessagesFilter(), handle_unknown_commands))
 
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
