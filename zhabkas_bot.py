@@ -1,6 +1,7 @@
 import sqlite3
 import datetime
 import os
+import requests
 from zoneinfo import ZoneInfo
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
