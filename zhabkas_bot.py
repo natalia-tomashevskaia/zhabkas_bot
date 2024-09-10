@@ -162,5 +162,3 @@ if __name__ == '__main__':
     web.run_app(app, port=int(os.environ.get("PORT", 8080))) 
 
     application.run_polling()
-
-    application.run_polling()
