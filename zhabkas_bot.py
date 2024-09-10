@@ -14,7 +14,7 @@ conn = sqlite3.connect('users.db')
 c = conn.cursor()
 
 # Create table if not exists
-c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY)")
+c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY)") 
 
 # Save (commit) the changes
 conn.commit()
