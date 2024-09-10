@@ -33,7 +33,7 @@ def calc_days_to_wait_until_wednesday(current_day):
     if current_day > WEDNESDAY:
         number_of_weekdays = 7
         return number_of_weekdays + WEDNESDAY - current_day
-    if current_day == WEDNESDAY:
+    if current_day == WEDNESDAY: 
         return 0
 
 def calc_day_string(days_to_wait):
