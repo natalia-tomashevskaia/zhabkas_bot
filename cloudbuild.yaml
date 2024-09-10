@@ -14,7 +14,7 @@ steps:
         gcloud run deploy Zhabkas \
           --image gcr.io/$PROJECT_ID/zhabkas-bot \
           --platform managed \
-          --region global (Global) \
+          --region global \
           --allow-unauthenticated
 
 images:
