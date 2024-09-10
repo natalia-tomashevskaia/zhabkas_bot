@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 import os
 import requests
+from aiohttp import web
 from zoneinfo import ZoneInfo
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -154,5 +155,12 @@ if __name__ == '__main__':
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
     scheduler.add_job(send_wednesday_message_to_all_users, 'cron', day_of_week='2', hour='12', minute='00')
     scheduler.start()
+
+    # Start the HTTP server
+    app = web.Application()
+    app.router.add_get('/', handle_healthcheck)
+    web.run_app(app, port=int(os.environ.get("PORT", 8080)))
+
+    application.run_polling()
 
     application.run_polling()
