@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the bot code into the Docker image
 COPY . .
-
+EXPOSE 8080
 # Create a new user to run the application
 RUN useradd -m botuser
 USER botuser
