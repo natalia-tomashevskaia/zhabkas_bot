@@ -23,7 +23,7 @@ conn.commit()
 WEDNESDAY = 2
 NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID')
+UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID') 
 WEDNESDAY_PHOTO = None
 
 # Set up calculations
