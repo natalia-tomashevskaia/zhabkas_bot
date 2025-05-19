@@ -158,7 +158,6 @@ if __name__ == '__main__':
 
     # Start the HTTP server
     app = web.Application()
-    app.router.add_get('/', handle_healthcheck)
-    web.run_app(app, port=int(os.environ.get("PORT", 8080))) 
+    web.run_app(app, port=int(os.environ.get("PORT", 8080)))
 
     application.run_polling()
