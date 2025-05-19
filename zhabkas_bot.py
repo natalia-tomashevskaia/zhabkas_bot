@@ -1,20 +1,22 @@
-import sqlite3
 import datetime
 import os
+import sqlite3
+from zoneinfo import ZoneInfo
+
 import requests
 from aiohttp import web
-from zoneinfo import ZoneInfo
-from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from requests import JSONDecodeError
+from telegram import Update, Bot
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
+from telegram.ext.filters import BaseFilter
 
 # Set up database connection
 conn = sqlite3.connect('users.db')
 c = conn.cursor()
 
 # Create table if not exists
-c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY)") 
+c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY)")
 
 # Save (commit) the changes
 conn.commit()
@@ -23,18 +25,20 @@ conn.commit()
 WEDNESDAY = 2
 NOT_WEDNESDAY_PICTURE_PATH = 'not_wednesday.jpg'
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID') 
+UNSPLASH_CLIENT_ID = os.getenv('UNSPLASH_CLIENT_ID')
 WEDNESDAY_PHOTO = None
+
 
 # Set up calculations
 def calc_days_to_wait_until_wednesday(current_day):
     if current_day < WEDNESDAY:
         return WEDNESDAY - current_day
-    if current_day > WEDNESDAY:
+    elif current_day > WEDNESDAY:
         number_of_weekdays = 7
         return number_of_weekdays + WEDNESDAY - current_day
-    if current_day == WEDNESDAY: 
+    else:
         return 0
+
 
 def calc_day_string(days_to_wait):
     if days_to_wait != 1:
@@ -42,6 +46,7 @@ def calc_day_string(days_to_wait):
     else:
         day_string = 'day'
     return day_string
+
 
 async def get_zhabka_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id  # Retrieve the user ID from the chat
@@ -67,11 +72,11 @@ async def send_wednesday_message(user_id):
         except JSONDecodeError:
             await bot.send_message(chat_id=user_id,
                                    text='Sorry, my dudes, no zhabka for now, try later')
-            return
 
     await bot.send_photo(chat_id=user_id,
                          photo=WEDNESDAY_PHOTO,
                          caption='It is Wednesday (in UTC+3), my dudes✨')
+
 
 async def send_non_wednesday_message(user_id, update, context, current_day_in_moscow):
     days_to_wait = calc_days_to_wait_until_wednesday(current_day_in_moscow)
@@ -80,13 +85,17 @@ async def send_non_wednesday_message(user_id, update, context, current_day_in_mo
                                  photo=NOT_WEDNESDAY_PICTURE_PATH,
                                  caption=f'Have patience for {days_to_wait} more {day_string}, my pals')
 
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text="Send /zhabka and see if today is Wednesday, my dudes! Send /register and receive a zhabka every Wednesday")
+                                   text="Send /zhabka and see if today is Wednesday, my dudes! Send /register "
+                                        "and receive a zhabka every Wednesday")
+
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text="Welcome, my dudes!")
+
 
 async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id  # Retrieve the user ID from the chat
@@ -101,6 +110,7 @@ async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You're already registered!")
 
+
 async def unregister_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id  # Retrieve the user ID from the chat
     c.execute("SELECT id FROM users WHERE id=?", (user_id,))
@@ -114,6 +124,7 @@ async def unregister_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You're not registered yet!")
 
+
 async def send_wednesday_message_to_all_users():
     global WEDNESDAY_PHOTO
     WEDNESDAY_PHOTO = None  # Reset the Wednesday photo URL at the beginning of the day
@@ -122,14 +133,17 @@ async def send_wednesday_message_to_all_users():
     for user_id in user_ids:
         await send_wednesday_message(user_id)
 
+
 # Set up a custom filter and a custom handler to avoid package conflicts
-class AllMessagesFilter(object):
+class AllMessagesFilter(BaseFilter):
     def filter(self, message):
         return True
+
 
 class CustomHandler(MessageHandler):
     def check_update(self, update):
         return True  # Always handle the update
+
 
 async def handle_unknown_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if the message is a command
@@ -141,6 +155,7 @@ async def handle_unknown_commands(update: Update, context: ContextTypes.DEFAULT_
 ^^    ^^
         """
         await context.bot.send_message(chat_id=update.effective_chat.id, text=frog_ascii)
+
 
 # Build the app and set up a cron expression
 if __name__ == '__main__':
